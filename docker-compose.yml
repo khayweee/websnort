@@ -1,0 +1,14 @@
+version: "3.9"
+services:
+  docker-snort:
+    container_name: docker-snort
+    build:
+      context: .
+      dockerfile: Dockerfile
+    stdin_open: true
+    tty: true
+    volumes:
+      - ./snort:/etc/snort
+
+volumes:
+  snort-docker-volume:
