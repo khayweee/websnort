@@ -45,7 +45,7 @@ ENV SNORT_VERSION 2.9.18.1
 RUN wget --no-check-certificate https://www.snort.org/downloads/archive/snort/snort-${SNORT_VERSION}.tar.gz \
     && tar xvfz snort-${SNORT_VERSION}.tar.gz \
     && cd snort-${SNORT_VERSION} \
-    && ./configure; make; make install
+    && ./configure --enable-perfprofiling; make; make install
     
 RUN mkdir -p /var/log/snort && \
     mkdir -p /usr/local/lib/snort_dynamicrules
