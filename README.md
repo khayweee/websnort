@@ -55,6 +55,26 @@ snort -c /etc/snort/etc/snort.conf -r /etc/snort/recorded_pcaps/icmp_8888.pcap -
 snort -i eth0 -c /etc/snort/etc/snort.conf -A console -l /etc/snort/logs
 ```
 
+### 1.4 Git commands
+```
+git checkout -b <new_branch>
+
+# ...start development...
+git add .
+git commit -m
+git push -u origin <new_branch>
+# ...end development...
+
+git checkout main
+git pull origin main
+git merge <new_branch>
+git push origin main
+
+# Delete remote branch
+git push -d origin <new_branch>
+
+```
+
 # 2. Snort Conf
 ### 2.1 Rules Performance
 
