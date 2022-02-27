@@ -57,6 +57,8 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
 
 RUN ldconfig
 
+COPY src websnort
+
 # # Create snort folder in /etc directory
 # COPY ./snort /etc
 
