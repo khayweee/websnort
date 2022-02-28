@@ -4,8 +4,9 @@ Main running logic for running pcap
 import sys
 from datetime import datetime
 from multiprocessing.pool import ThreadPool
-from snort.snort import Snort
-from typing import Optional
+from typing import Optional, List
+
+from src.snort.snort import Snort
 
 STATUS_SUCCESS = "Success"
 STATUS_FAILED = "Failed"
@@ -51,7 +52,7 @@ class Runner(object):
                 return True
             return False
 
-    def _run_snort_alerts(runner: Snort, pcap, rules: List[str]=None):
+    def _run_snort_alerts(self, runner: Snort, pcap, rules: List[str]=None):
         """
         Run Snort on the supplied pcap and rules
         :param runner: A snort runner instance

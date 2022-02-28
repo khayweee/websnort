@@ -71,7 +71,7 @@ class Snort(object):
         return (self._parse_version(stderr),
                 [ x for x in self._parse_alert(stdout)])
 
-    def run_performance(self, pcap, rules: List[str] = None)
+    def run_performance(self, pcap, rules: List[str] = None):
         if rules:
             self.write_rules(rules)
         pass

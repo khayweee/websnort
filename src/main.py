@@ -3,7 +3,7 @@ from src.snort.snort import Snort
 from src.runner import Runner
 
 
-if __name__ == "__main__":
+def main():
     conf = {
         'snort' : 'snort',
         'conf' : '/etc/snort/etc/snort.conf'
@@ -15,3 +15,7 @@ if __name__ == "__main__":
     pcap = sys.argv[1]
     r = runner._run_snort_alerts(snort, pcap)
     print(r)
+
+
+if __name__ == "__main__":
+    main()

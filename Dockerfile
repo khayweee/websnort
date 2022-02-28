@@ -1,7 +1,7 @@
 FROM ubuntu:latest
 
 RUN apt-get -y update --fix-missing
-RUN apt-get install python3 -y
+RUN apt-get install python3 pip -y
 
 ENV TZ=Asia/Singapore
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
@@ -54,7 +54,6 @@ RUN ldconfig
 
 # Copying source code foler
 COPY . websnort
-RUN apt-get install pip -y
 #RUN pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org  -r websnort/requirements.txt
 
 # Clean up APT when done.
