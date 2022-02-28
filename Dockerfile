@@ -50,21 +50,21 @@ RUN wget --no-check-certificate https://www.snort.org/downloads/archive/snort/sn
 RUN mkdir -p /var/log/snort && \
     mkdir -p /usr/local/lib/snort_dynamicrules
     
+RUN ldconfig
+
+# Copying source code foler
+COPY . websnort
+RUN apt-get install pip -y
+#RUN pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org  -r websnort/requirements.txt
 
 # Clean up APT when done.
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
     /opt/snort-${SNORT_VERSION}.tar.gz /opt/daq-${DAQ_VERSION}.tar.gz
-
-RUN ldconfig
-
-COPY src websnort
-
 # # Create snort folder in /etc directory
 # COPY ./snort /etc
 
 # RUN chmod a+r /etc/snort/etc/snort.conf
 
-# RUN apt-get install pip -y
 
 # # RUN pip install websnort
 # ENV PYTHONPATH "${PYTHONPATH}:/opt/websnort"

@@ -3,9 +3,12 @@ import os
 import re
 import shlex
 from subprocess import PIPE, Popen
+from typing import List
 
 import sys
 
+# Example Alert
+# 02/26/22-21:02:33.357151  [**] [1:1000004:0] Pinging... [**] [Priority: 0] {ICMP} 192.168.52.129 -> 8.8.8.8
 ALERT_PATTERN = re.compile(
     r"(?P<timestamp>\d{2}/\d{2}/\d{2}-\d{2}:\d{2}:\d{2}\.\d+)\s+"
     r"\[\*\*\]\s+\[\d+:(?P<sid>\d+):(?P<revision>\d+)\] "
@@ -48,13 +51,16 @@ class Snort(object):
             cmdline = "cmd.exe /c " + cmdline
         return shlex.split(cmdline)
     
-    def run(self, pcap):
+    def run(self, pcap, rules: List[str] = None) -> list:
         """
         Runs snort against supplied pcap.
 
         :param pcap: Filepath to pcap file to scan
         :returns: tuple of version, list of alerts
         """
+        if rules:
+            self.write_rules(rules)
+
         proc = Popen(self._snort_cmd(pcap), stdout=PIPE,
                     stderr=PIPE, universal_newlines=True)
         stdout, stderr = proc.communicate()
@@ -62,10 +68,22 @@ class Snort(object):
         if proc.returncode != 0:
             raise Exception("\n".join(["Exception failed return code: {code}" \
                             .format(proc.returncode), stderr or ""]))
-        return (self.parse_version(stderr),
-                [ x for x in self.parse_alert(stdout)])
+        return (self._parse_version(stderr),
+                [ x for x in self._parse_alert(stdout)])
 
-    def parse_version(self, output):
+    def run_performance(self, pcap, rules: List[str] = None)
+        if rules:
+            self.write_rules(rules)
+        pass
+    
+    def write_rules(rules: List) -> None:
+        """
+        Create local.rules files for snort to ingest as rules
+        """
+        # TODO
+        pass
+
+    def _parse_version(self, output):
         """
         Parses the supplied output and returns the version string.
 
@@ -78,13 +96,13 @@ class Snort(object):
                 return match.group('version').strip()
         return None
     
-    def parse_alert(self, output):
+    def _parse_alert(self, output):
         """
         Parses the supplied output and yields any alerts.
 
         Example alert format:
-        01/28/14-22:26:04.885446  [**] [1:1917:11] INDICATOR-SCAN UPnP service discover attempt [**] [Classification: Detection of a Network Scan] [Priority: 3] {UDP} 10.1.1.132:58650 -> 239.255.255.250:1900
-
+        02/26/22-21:02:33.357151  [**] [1:1917:11] INDICATOR-SCAN UPnP service discover attempt [**] [Classification: Detection of a Network Scan] [Priority: 3] {UDP} 10.1.1.132:58650 -> 239.255.255.250:1900
+        02/26/22-21:02:33.357151  [**] [1:1000004:0] Pinging... [**] [Priority: 0] {ICMP} 192.168.52.129 -> 8.8.8.8
         :param output: A string containing the output of running snort
         :returns: Generator of snort alert dicts
         """
@@ -106,6 +124,10 @@ class Snort(object):
                 yield rec
 
 if __name__ == '__main__':
+    """
+    For Debugging Purposes only
+    This module is intended for use as an imported API
+    """
     conf = {
         'snort' : 'snort',
         'conf' : '/etc/snort/etc/snort.conf'
