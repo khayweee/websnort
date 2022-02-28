@@ -5,8 +5,11 @@ import sys
 from datetime import datetime
 from multiprocessing.pool import ThreadPool
 from typing import Optional, List
+import logging
 
 from src.snort.snort import Snort
+
+logger = logging.getLogger(__name__)
 
 STATUS_SUCCESS = "Success"
 STATUS_FAILED = "Failed"
@@ -49,7 +52,9 @@ class Runner(object):
             # Check for both little/big endians
             if header == b"\xa1\xb2\xc3\xd4" or \
                header == b"\xd4\xc3\xb2\xa1":
+                logger.info("Valid PCAP: %s", f.name.split('/')[-1])
                 return True
+            logger.warning("Invalid PCAP: %s", f.name.split('/')[-1])
             return False
 
     def _run_snort_alerts(self, runner: Snort, pcap, rules: List[str]=None):
@@ -59,7 +64,7 @@ class Runner(object):
         :param pcap: a pcap file
         """
         run = {
-                'ruleset': runner.conf.get('ruleset', 'default'),
+                'pcap': pcap,
                 'status': STATUS_FAILED
             }
         try:
@@ -71,10 +76,14 @@ class Runner(object):
             run['version'] = version or "Unknown"
             run['status'] = STATUS_SUCCESS
             run['alerts'] = alerts
+            logger.info("Successfully ran supplied Pcap")
         except Exception as ex:
+            logger.exception('Uncaught error detected')
             run['error'] = str(ex)
         finally:
-            run['duration'] = self.duration(run_start)
+            duration = self.duration(run_start)
+            logger.info("Total Time: %s(s)", duration)
+            run['duration'] = duration
         return run
 
 if __name__ == "__main__":

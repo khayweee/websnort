@@ -1,10 +1,11 @@
 from datetime import datetime
 import os
+import stat
 import re
 import shlex
 from subprocess import PIPE, Popen
 from typing import List
-
+import logging
 import sys
 
 # Example Alert
@@ -20,6 +21,9 @@ VERSION_PATTERN = re.compile(
     r".*\s+Version (?P<version>[\d\.]+ .*)"
 )
 
+DEFAULT_RULE_PATH = "/etc/snort/rules/check_default.rules"
+
+logger = logging.getLogger(__name__)
 
 class Snort(object):
     """
@@ -32,6 +36,7 @@ class Snort(object):
         :param conf: dict containing
                     path: Path to Snort Binary
                     config: Path to Snort Config
+                    rulepath: Path to rules directory
                     output: Path to output any Snort output
         """
         self.conf = conf
@@ -43,9 +48,10 @@ class Snort(object):
         :param pcap: Pcap filename to scan
         :returns: list of snort command args to scan supplied pcap file
         """
-        cmdline = "'{snort}' -A console -N -y -c '{conf}' -r '{pcap}'"\
+        cmdline = "'{snort}' -A console -N -y -c '{conf}' {extra_args} -r '{pcap}'"\
             .format(snort=self.conf['snort'],
                     conf=self.conf['conf'],
+                    extra_args=self.conf.get('extra_args', ''),
                     pcap=pcap)
         if 'nt' in os.name:
             cmdline = "cmd.exe /c " + cmdline
@@ -67,7 +73,7 @@ class Snort(object):
 
         if proc.returncode != 0:
             raise Exception("\n".join(["Exception failed return code: {code}" \
-                            .format(proc.returncode), stderr or ""]))
+                            .format(code = proc.returncode), stderr or ""]))
         return (self._parse_version(stderr),
                 [ x for x in self._parse_alert(stdout)])
 
@@ -76,12 +82,19 @@ class Snort(object):
             self.write_rules(rules)
         pass
     
-    def write_rules(rules: List) -> None:
+    def write_rules(self, rules: List[str]) -> None:
         """
         Create local.rules files for snort to ingest as rules
         """
-        # TODO
-        pass
+        rule_path = self.conf.get('rulepath', DEFAULT_RULE_PATH)
+        with open(rule_path, 'w+') as f:
+            for rule in rules:
+                logger.info('Writing: [%s]', rule)
+                f.writelines(rule)
+                f.writelines('\n')
+        os.chmod(rule_path, stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
+        # TODO: Change/Add autoincremental SID values to each snort rule
+        
 
     def _parse_version(self, output):
         """

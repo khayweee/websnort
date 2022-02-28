@@ -9,6 +9,6 @@ services:
     tty: true
     volumes:
       - ./snort_resources:/etc/snort
-
+      
 volumes:
   snort-docker-volume:
