@@ -7,7 +7,7 @@ from multiprocessing.pool import ThreadPool
 from typing import Optional, List
 import logging
 
-from src.snort.snort import Snort
+from snort.snort import Snort
 
 logger = logging.getLogger(__name__)
 

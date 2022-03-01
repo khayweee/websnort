@@ -6,6 +6,7 @@ from os import path
 import traceback
 import configparser
 import logging, logging.config
+
 from src.main import main
 
 LOGGER_CONF_PATH = "src/conf/logging.conf"
