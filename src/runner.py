@@ -72,10 +72,11 @@ class Runner(object):
             if not self._is_pcap(pcap):
                 raise Exception("Not a valid pcap file")
 
-            version, alerts = runner.run(pcap, rules)
+            version, alerts, profiles = runner.run(pcap, rules)
             run['version'] = version or "Unknown"
             run['status'] = STATUS_SUCCESS
             run['alerts'] = alerts
+            run['profiles'] = profiles
             logger.info("Successfully ran supplied Pcap")
         except Exception as ex:
             logger.exception('Uncaught error detected')

@@ -1,4 +1,6 @@
 from datetime import datetime
+from pathlib import Path
+import glob
 import os
 import stat
 import re
@@ -21,7 +23,21 @@ VERSION_PATTERN = re.compile(
     r".*\s+Version (?P<version>[\d\.]+ .*)"
 )
 
+# Example 
+#   Num      SID GID Rev     Checks   Matches    Alerts           Microsecs  Avg/Check  Avg/Match Avg/Nonmatch   Disabled
+#   ===      === === ===     ======   =======    ======           =========  =========  ========= ============   ========
+#     1        1   1   0          8         8         8                   0        0.1        0.1          0.0          0
+#     2        2   1   0          8         4         4                   0        0.0        0.0          0.0          0
+PROFILE_RULE_PATTERN = re.compile(
+    r"^\s+(?P<num>\d+)\s+(?P<sid>\d+)\s+(?P<gid>\d+)\s+(?P<rev>\d+)\s+"
+    r"(?P<checks>\d+)\s+(?P<matches>\d+)\s+(?P<alerts>\d+)\s+(?P<microsecs>\d+)\s+"
+    r"(?P<avg_check>\d+(\.\d+)?)\s+(?P<avg_match>\d+(\.\d+)?)\s+(?P<avg_nonmatch>\d+(\.\d+)?)\s+"
+    r"(?P<disabled>\d+)$"
+)
+
 DEFAULT_RULE_PATH = "/etc/snort/rules/check_default.rules"
+DEFAULT_OUTPUT_PATH = "/var/log/snort/"
+DEFAULT_RULE_PROFILE_FILENAME_PREFIX = "rules_stats"
 
 logger = logging.getLogger(__name__)
 
@@ -54,9 +70,39 @@ class Snort(object):
                     extra_args=self.conf.get('extra_args', ''),
                     pcap=pcap)
         if 'nt' in os.name:
+            # Windows Operating System
             cmdline = "cmd.exe /c " + cmdline
         return shlex.split(cmdline)
     
+    def _rule_performance_cmd(self, output_dir:str = None, filename_prefix:str = None):
+        """
+        Read the filename produced my config profile_rules snort preprocessor
+        
+        From Snort Manual Ver. 2.9.16
+        2.5 Performance Profiling
+        http://manual-snort-org.s3-website-us-east-1.amazonaws.com/node20.html#SECTION00351000000000000000
+
+        :param output_dir: The directory of snort outuput. Default /var/log/snort
+        :param filename_prefix: The name of the output file. e.g. rule_stats.txt
+        """
+        if not output_dir:
+            output_dir = Path(DEFAULT_OUTPUT_PATH)
+        else:
+            output_dir = Path(output_dir)
+        
+        if not filename_prefix:
+            filename_prefix = DEFAULT_RULE_PROFILE_FILENAME_PREFIX
+        
+
+        list_of_files = list(output_dir.glob(filename_prefix + ".*"))
+        latest_file = str(max(list_of_files, key=os.path.getctime))
+        
+        cmdline = "'cat {latest_file}'"\
+                    .format(latest_file=latest_file)
+        return shlex.split(cmdline)
+
+        
+
     def run(self, pcap, rules: List[str] = None) -> list:
         """
         Runs snort against supplied pcap.
@@ -75,7 +121,8 @@ class Snort(object):
             raise Exception("\n".join(["Exception failed return code: {code}" \
                             .format(code = proc.returncode), stderr or ""]))
         return (self._parse_version(stderr),
-                [ x for x in self._parse_alert(stdout)])
+                [ x for x in self._parse_alert(stdout)],
+                [ x for x in self._parse_rule_profile(stderr)])
 
     def run_performance(self, pcap, rules: List[str] = None):
         if rules:
@@ -94,7 +141,31 @@ class Snort(object):
                 f.writelines('\n')
         os.chmod(rule_path, stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
         # TODO: Change/Add autoincremental SID values to each snort rule
-        
+    
+    def _parse_rule_profile(self, output):
+        """
+        Parses the supplied output and yields any rule
+        :param output: A string containing the output of snort
+        :returns: A generator
+        """
+        for x in output.splitlines():
+            match = PROFILE_RULE_PATTERN.match(x)
+            if match:
+                rec = {
+                    'num': int(match.group('num')),
+                    'sid': int(match.group('sid')),
+                    'gid': int(match.group('gid')),
+                    'rev': int(match.group('rev')),
+                    'checks': int(match.group('checks')),
+                    'matches': int(match.group('matches')),
+                    'alerts': int(match.group('alerts')),
+                    'microsecs': int(match.group('microsecs')),
+                    'avg_check': float(match.group('avg_check')),
+                    'avg_match': float(match.group('avg_match')),
+                    'avg_nonmatch': float(match.group('avg_nonmatch')),
+                    'disabled': int(match.group('disabled'))
+                    }
+                yield rec
 
     def _parse_version(self, output):
         """

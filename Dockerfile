@@ -60,9 +60,7 @@ COPY . websnort
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
     /opt/snort-${SNORT_VERSION}.tar.gz /opt/daq-${DAQ_VERSION}.tar.gz
 
-# Add user
-# RUN useradd -ms /bin/bash appuser
-# USER appuser
+
 # # Create snort folder in /etc directory
 # COPY ./snort /etc
 
