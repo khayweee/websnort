@@ -1,2 +1,1 @@
-alert icmp any any <> any any (msg: 'Pinging BOTH SIDE'; sid:1; )
-alert icmp any any -> 8.8.8.8 any (msg: 'Pinging to'; sid:2;)
+alert icmp any any <> any any (msg: "Ping"; sid:1; )

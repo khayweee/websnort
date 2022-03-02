@@ -6,6 +6,7 @@ from datetime import datetime
 from multiprocessing.pool import ThreadPool
 from typing import Optional, List
 import logging
+from io import BytesIO
 
 from snort.snort import Snort
 
@@ -47,15 +48,17 @@ class Runner(object):
         Test if file header of supplied file is pcap
         :param pcap: a pcap file
         """
+        #print(pcap)
+        #print(type(pcap))
         with open(pcap, 'rb') as f:
             header = f.read(4)
             # Check for both little/big endians
             if header == b"\xa1\xb2\xc3\xd4" or \
-               header == b"\xd4\xc3\xb2\xa1":
-                logger.info("Valid PCAP: %s", f.name.split('/')[-1])
+                header == b"\xd4\xc3\xb2\xa1":
+                logger.info("Valid PCAP")
                 return True
-            logger.warning("Invalid PCAP: %s", f.name.split('/')[-1])
-            return False
+            logger.warning("Invalid PCAP")
+        return False
 
     def _run_snort_alerts(self, runner: Snort, pcap, rules: List[str]=None):
         """
@@ -64,7 +67,6 @@ class Runner(object):
         :param pcap: a pcap file
         """
         run = {
-                'pcap': pcap,
                 'status': STATUS_FAILED
             }
         try:
