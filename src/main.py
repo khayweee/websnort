@@ -74,7 +74,7 @@ async def health(request: Request):
 
 
 @app.post("/runpcap/", response_model=schemas.RunPcap)
-async def run_pcap_rules(file: UploadFile,
+async def run_pcap_rules(file: UploadFile = File(...),
                    rules: List[schemas.SnortStr] = None
                   ):
     """
@@ -90,7 +90,7 @@ async def run_pcap_rules(file: UploadFile,
     return result
 
 @app.post("/ruleperformance/", response_model=schemas.RulePerforance)
-async def run_rule_performance(file: UploadFile,
+async def run_rule_performance(file: UploadFile = File(...),
                            rules: List[schemas.SnortStr] = None
                            ):
     """

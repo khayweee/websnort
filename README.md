@@ -108,3 +108,6 @@ output unified2: filename snort.log, limit 128mb, nostamp, mpls_event_types, vla
 u2boat -t pcap <infile> <outfile>
 ```
 
+###
+Documentations
+https://stackoverflow.com/questions/67729239/how-to-use-an-endpoint-with-multiple-body-params-and-fileupload-in-fastapi
