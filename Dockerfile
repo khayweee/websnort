@@ -53,8 +53,11 @@ RUN mkdir -p /var/log/snort && \
 RUN ldconfig
 
 # Copying source code foler
+COPY requirements.txt websnort/requirements.txt
+RUN pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org  -r websnort/requirements.txt
 COPY . websnort
-#RUN pip install --trusted-host pypi.org --trusted-host files.pythonhosted.org  -r websnort/requirements.txt
+
+ENV PYTHONPATH "${PYTHONPATH}:/opt/websnort"
 
 # Clean up APT when done.
 RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \

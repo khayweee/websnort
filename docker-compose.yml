@@ -1,14 +1,19 @@
 version: "3.9"
 services:
   docker-snort:
-    container_name: docker-snort
     build:
       context: .
       dockerfile: Dockerfile
+    ports:
+      - 80:8081
+    container_name: docker-snort
     stdin_open: true
     tty: true
     volumes:
       - ./snort_resources:/etc/snort
+      - ./src:/opt/websnort
+    command: uvicorn main:app --reload --workers 1 --host 0.0.0.0 --port 8081
+
       
 volumes:
   snort-docker-volume:
