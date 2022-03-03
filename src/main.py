@@ -9,8 +9,13 @@ from runner import Runner
 import schemas 
 import config
 
-from fastapi import FastAPI, Request, UploadFile, File
+from fastapi import FastAPI, Request, UploadFile, File, Form
 from fastapi.responses import HTMLResponse
+import uvicorn
+
+DEFAULT_PCAP_NAME = 'icmp_8888.pcap'
+DEFAULT_PCAP_DIR =  os.path.join('/opt/websnort/resources', DEFAULT_PCAP_NAME)
+
 
 
 def get_application():
@@ -30,12 +35,19 @@ def get_application():
 app, snort, runner = get_application()
 
 
-def run_pcap(infile, filename: str, rules: List[schemas.SnortStr]=None) -> dict:
+def run_pcap(infile = None,
+             filename: str = None,
+             rules: List[schemas.SnortStr]=None) -> dict:
     """
     Helper function for running Snort
     """
     tmp = tempfile.NamedTemporaryFile(suffix=".pcap", delete=False)
     m = hashlib.md5()
+
+    # If no PCAP file provided
+    if not infile:
+        filename = DEFAULT_PCAP_NAME
+        infile = open(DEFAULT_PCAP_DIR, 'rb')
     results = {
                 'pcap': filename,
                 'status': 'Failed',
@@ -61,7 +73,7 @@ def run_pcap(infile, filename: str, rules: List[schemas.SnortStr]=None) -> dict:
         os.remove(tmp.name)
     return results
 
-@app.get("/api/health", name="websnort:health")
+@app.get("/health", name="websnort:health")
 async def health(request: Request):
     client_ip = request.client
     result = {
@@ -74,8 +86,8 @@ async def health(request: Request):
 
 
 @app.post("/runpcap/", response_model=schemas.RunPcap)
-async def run_pcap_rules(file: UploadFile = File(...),
-                   rules: List[schemas.SnortStr] = None
+async def run_pcap_rules(file: UploadFile = File(None),
+                   rules: List[schemas.SnortStr] = Form(...)
                   ):
     """
     Endpoint for generating snort rule alerts and rule profiles
@@ -83,27 +95,38 @@ async def run_pcap_rules(file: UploadFile = File(...),
     :param rules: The supplied list of valid snort rules
     """  
     result = {
-        "pcap": file.filename
+        'rules': rules
     }
-    result.update(run_pcap(filename=file.filename, infile=file.file, rules=rules))
+    infile = file
+    filename = None
+    if file:
+        filename = file.filename
+        infile = file.file
+    
+    result.update(run_pcap(filename=filename, infile=infile, rules=rules))
     
     return result
 
 @app.post("/ruleperformance/", response_model=schemas.RulePerforance)
-async def run_rule_performance(file: UploadFile = File(...),
-                           rules: List[schemas.SnortStr] = None
-                           ):
+async def run_rule_performance(file: UploadFile = File(None),
+                               rules: List[schemas.SnortStr] = Form(...)
+                              ):
     """
     Endpoint for generating snort rule performance profiles
     :param file: The supplied pcap file
     :param rules: The supplied list of valid snort rules
     """  
-    print(rules)
     result = {
-        "pcap": file.filename,
         "rules": rules
     }
-    result.update(run_pcap(filename=file.filename, infile=file.file, rules=rules))
+
+    infile = file
+    filename = None
+    if file:
+        filename = file.filename
+        infile = file.file
+        
+    result.update(run_pcap(filename=filename, infile=infile, rules=rules))
     
     return result
 
@@ -123,3 +146,8 @@ async def main():
         </body>
     """
     return HTMLResponse(content=content)
+
+
+if __name__ == '__main__':
+    app, snort, runner = get_application()
+    uvicorn.run(app, host="0.0.0.0", port=8081)
