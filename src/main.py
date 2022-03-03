@@ -98,6 +98,7 @@ async def run_rule_performance(file: UploadFile,
     :param file: The supplied pcap file
     :param rules: The supplied list of valid snort rules
     """  
+    print(rules)
     result = {
         "pcap": file.filename,
         "rules": rules
@@ -109,11 +110,16 @@ async def run_rule_performance(file: UploadFile,
 @app.get("/")
 async def main():
     content = """
-<body>
-<form action="/files/" enctype="multipart/form-data" method="post">
-    <input name="files" type="file" multiple>
-    <input type="submit">
-</form>
-</body>
+        <body>
+        <form action="/runpcap/" enctype="multipart/form-data" method="post">
+            <h3>Please provide a pcap file</h3>
+            <input name="file" type="file">
+            <h3>Please provide a snort rule</h3>
+            <p>This snort rule will run on the supplied pcap</p>
+            <input name="rules" type="text">
+            <br>
+            <input type="submit">
+        </form>
+        </body>
     """
     return HTMLResponse(content=content)
