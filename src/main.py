@@ -12,7 +12,6 @@ import config
 from fastapi import FastAPI, Request, UploadFile, File
 from fastapi.responses import HTMLResponse
 
-SnortStr = str
 
 def get_application():
     conf = {
@@ -31,8 +30,10 @@ def get_application():
 app, snort, runner = get_application()
 
 
-def run_pcap(infile, filename: str, rules: List[SnortStr]=None) -> dict:
-    print(rules)
+def run_pcap(infile, filename: str, rules: List[schemas.SnortStr]=None) -> dict:
+    """
+    Helper function for running Snort
+    """
     tmp = tempfile.NamedTemporaryFile(suffix=".pcap", delete=False)
     m = hashlib.md5()
     results = {
@@ -71,6 +72,40 @@ async def health(request: Request):
     }
     return result
 
+
+@app.post("/runpcap/", response_model=schemas.RunPcap)
+async def run_pcap_rules(file: UploadFile,
+                   rules: List[schemas.SnortStr] = None
+                  ):
+    """
+    Endpoint for generating snort rule alerts and rule profiles
+    :param file: The supplied pcap file
+    :param rules: The supplied list of valid snort rules
+    """  
+    result = {
+        "pcap": file.filename
+    }
+    result.update(run_pcap(filename=file.filename, infile=file.file, rules=rules))
+    
+    return result
+
+@app.post("/ruleperformance/", response_model=schemas.RulePerforance)
+async def run_rule_performance(file: UploadFile,
+                           rules: List[schemas.SnortStr] = None
+                           ):
+    """
+    Endpoint for generating snort rule performance profiles
+    :param file: The supplied pcap file
+    :param rules: The supplied list of valid snort rules
+    """  
+    result = {
+        "pcap": file.filename,
+        "rules": rules
+    }
+    result.update(run_pcap(filename=file.filename, infile=file.file, rules=rules))
+    
+    return result
+
 @app.get("/")
 async def main():
     content = """
@@ -82,18 +117,3 @@ async def main():
 </body>
     """
     return HTMLResponse(content=content)
-
-
-@app.post("/files/", response_model=schemas.RunPcap)
-async def create_files(
-    file: UploadFile,
-    rules: List[SnortStr] = None
-):  
-    result = {
-        "pcap": file.filename
-    }
-    print(file.filename)
-    
-    result = run_pcap(filename=file.filename, infile=file.file, rules=rules)
-    
-    return result
