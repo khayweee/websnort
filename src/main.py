@@ -11,6 +11,7 @@ import config
 
 from fastapi import FastAPI, Request, UploadFile, File, Form
 from fastapi.responses import HTMLResponse
+from fastapi.exceptions import ResponseValidationError
 import uvicorn
 
 DEFAULT_PCAP_NAME = 'icmp_8888.pcap'
@@ -72,6 +73,8 @@ def run_pcap(infile=None,
             snort, pcap=tmp.name, rules=rules))
     except OSError as ex:
         results['stderr'] = str(ex)
+    except Exception as ex:
+        results['stderr'] = str(ex)
     finally:
         os.remove(tmp.name)
     return results
@@ -108,7 +111,7 @@ async def run_pcap_rules(file: UploadFile = File(None),
         infile = file.file
 
     result.update(run_pcap(filename=filename, infile=infile, rules=rules))
-    print(result)
+
     return result
 
 

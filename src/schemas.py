@@ -12,9 +12,9 @@ class RunPcap(BaseModel):
     md5: str
     filesize: float
     profiles: List[dict]
-    alerts: List[dict]
+    alerts: list
     version: str
-    stderr: Optional[str]
+    stderr: Optional[str] = None
     duration: float
 
 
