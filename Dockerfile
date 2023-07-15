@@ -1,4 +1,4 @@
-FROM ubuntu:latest
+FROM ubuntu:20.04
 
 RUN apt-get -y update --fix-missing
 RUN apt-get install python3 pip -y
@@ -7,30 +7,30 @@ ENV TZ=Asia/Singapore
 RUN ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
 
 RUN apt-get install -y \
-        iputils-ping \
-        python-setuptools \
-        wget \
-        build-essential \
-        bison \
-        flex \
-        libpcap-dev \
-        libpcre3-dev \
-        libdumbnet-dev \
-        zlib1g-dev \
-        iptables \
-        libnetfilter-queue-dev \
-        tcpdump \
-        unzip \
-        vim \
-        openssl \
-        libssl-dev \
-        libnghttp2-dev \
-        libdnet \
-        autoconf \
-        libtool \
-        libtool-bin \
-        luajit \
-        libluajit-5.1-dev
+    iputils-ping \
+    python-setuptools \
+    wget \
+    build-essential \
+    bison \
+    flex \
+    libpcap-dev \
+    libpcre3-dev \
+    libdumbnet-dev \
+    zlib1g-dev \
+    iptables \
+    libnetfilter-queue-dev \
+    tcpdump \
+    unzip \
+    vim \
+    openssl \
+    libssl-dev \
+    libnghttp2-dev \
+    libdnet \
+    autoconf \
+    libtool \
+    libtool-bin \
+    luajit \
+    libluajit-5.1-dev
 
 # Define Working Directory
 WORKDIR /opt
@@ -40,16 +40,16 @@ RUN wget --no-check-certificate https://www.snort.org/downloads/archive/snort/da
     && cd daq-${DAQ_VERSION} \
     && autoreconf -ivf \
     && ./configure; make; make install
-    
+
 ENV SNORT_VERSION 2.9.18.1
 RUN wget --no-check-certificate https://www.snort.org/downloads/archive/snort/snort-${SNORT_VERSION}.tar.gz \
     && tar xvfz snort-${SNORT_VERSION}.tar.gz \
     && cd snort-${SNORT_VERSION} \
     && ./configure --enable-perfprofiling; make; make install
-    
+
 RUN mkdir -p /var/log/snort && \
     mkdir -p /usr/local/lib/snort_dynamicrules
-    
+
 RUN ldconfig
 
 # Copying source code foler
@@ -78,5 +78,5 @@ RUN apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* \
 # RUN mv websnort/websnort /usr/local/bin/
 
 # CMD '/usr/local/bin/websnort'
-        
-        
+
+

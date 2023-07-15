@@ -1,1 +1,1 @@
-alert icmp 8.8.8.8 any -> any any (msg: "Test"; sid:1; )
+alert icmp any any <> any any (msg: "icmp"; sid:6; )

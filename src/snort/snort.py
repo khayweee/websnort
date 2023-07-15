@@ -23,7 +23,7 @@ VERSION_PATTERN = re.compile(
     r".*\s+Version (?P<version>[\d\.]+ .*)"
 )
 
-# Example 
+# Example
 #   Num      SID GID Rev     Checks   Matches    Alerts           Microsecs  Avg/Check  Avg/Match Avg/Nonmatch   Disabled
 #   ===      === === ===     ======   =======    ======           =========  =========  ========= ============   ========
 #     1        1   1   0          8         8         8                   0        0.1        0.1          0.0          0
@@ -41,6 +41,7 @@ DEFAULT_RULE_PROFILE_FILENAME_PREFIX = "rules_stats"
 
 logger = logging.getLogger(__name__)
 
+
 class Snort(object):
     """
     Module to interfact with local Snort IDS installation
@@ -56,7 +57,7 @@ class Snort(object):
                     output: Path to output any Snort output
         """
         self.conf = conf
-    
+
     def _snort_cmd(self, pcap):
         """
         Given a pcap filaname, get the commandline to run
@@ -73,11 +74,11 @@ class Snort(object):
             # Windows Operating System
             cmdline = "cmd.exe /c " + cmdline
         return shlex.split(cmdline)
-    
-    def _rule_performance_cmd(self, output_dir:str = None, filename_prefix:str = None):
+
+    def _rule_performance_cmd(self, output_dir: str = None, filename_prefix: str = None):
         """
         Read the filename produced my config profile_rules snort preprocessor
-        
+
         From Snort Manual Ver. 2.9.16
         2.5 Performance Profiling
         http://manual-snort-org.s3-website-us-east-1.amazonaws.com/node20.html#SECTION00351000000000000000
@@ -89,19 +90,16 @@ class Snort(object):
             output_dir = Path(DEFAULT_OUTPUT_PATH)
         else:
             output_dir = Path(output_dir)
-        
+
         if not filename_prefix:
             filename_prefix = DEFAULT_RULE_PROFILE_FILENAME_PREFIX
-        
 
         list_of_files = list(output_dir.glob(filename_prefix + ".*"))
         latest_file = str(max(list_of_files, key=os.path.getctime))
-        
-        cmdline = "'cat {latest_file}'"\
-                    .format(latest_file=latest_file)
-        return shlex.split(cmdline)
 
-        
+        cmdline = "'cat {latest_file}'"\
+            .format(latest_file=latest_file)
+        return shlex.split(cmdline)
 
     def run(self, pcap, rules: List[str] = None) -> list:
         """
@@ -114,21 +112,20 @@ class Snort(object):
             self.write_rules(rules)
 
         proc = Popen(self._snort_cmd(pcap), stdout=PIPE,
-                    stderr=PIPE, universal_newlines=True)
+                     stderr=PIPE, universal_newlines=True)
         stdout, stderr = proc.communicate()
-
         if proc.returncode != 0:
-            raise Exception("\n".join(["Exception failed return code: {code}" \
-                            .format(code = proc.returncode), stderr or ""]))
+            raise Exception("\n".join(["Exception failed return code: {code}"
+                            .format(code=proc.returncode), stderr or ""]))
         return (self._parse_version(stderr),
-                [ x for x in self._parse_alert(stdout)],
-                [ x for x in self._parse_rule_profile(stderr)])
+                [x for x in self._parse_alert(stdout)],
+                [x for x in self._parse_rule_profile(stderr)])
 
     def run_performance(self, pcap, rules: List[str] = None):
         if rules:
             self.write_rules(rules)
         pass
-    
+
     def write_rules(self, rules: List[str]) -> None:
         """
         Create local.rules files for snort to ingest as rules
@@ -141,7 +138,7 @@ class Snort(object):
                 f.writelines('\n')
         os.chmod(rule_path, stat.S_IRUSR | stat.S_IRGRP | stat.S_IROTH)
         # TODO: Change/Add autoincremental SID values to each snort rule
-    
+
     def _parse_rule_profile(self, output):
         """
         Parses the supplied output and yields any rule
@@ -164,7 +161,7 @@ class Snort(object):
                     'avg_match': float(match.group('avg_match')),
                     'avg_nonmatch': float(match.group('avg_nonmatch')),
                     'disabled': int(match.group('disabled'))
-                    }
+                }
                 yield rec
 
     def _parse_version(self, output):
@@ -179,7 +176,7 @@ class Snort(object):
             if match:
                 return match.group('version').strip()
         return None
-    
+
     def _parse_alert(self, output):
         """
         Parses the supplied output and yields any alerts.
@@ -194,18 +191,19 @@ class Snort(object):
             match = ALERT_PATTERN.match(x)
             if match:
                 rec = {'timestamp': datetime.strptime(match.group('timestamp'),
-                                                    '%m/%d/%y-%H:%M:%S.%f'),
-                    'sid': int(match.group('sid')),
-                    'revision': int(match.group('revision')),
-                    'priority': int(match.group('priority')),
-                    'message': match.group('message'),
-                    'source': match.group('src'),
-                    'destination': match.group('dest'),
-                    'protocol': match.group('protocol'),
-                    }
+                                                      '%m/%d/%y-%H:%M:%S.%f'),
+                       'sid': int(match.group('sid')),
+                       'revision': int(match.group('revision')),
+                       'priority': int(match.group('priority')),
+                       'message': match.group('message'),
+                       'source': match.group('src'),
+                       'destination': match.group('dest'),
+                       'protocol': match.group('protocol'),
+                       }
                 if match.group('classtype'):
                     rec['classtype'] = match.group('classtype')
                 yield rec
+
 
 if __name__ == '__main__':
     """
@@ -213,14 +211,12 @@ if __name__ == '__main__':
     This module is intended for use as an imported API
     """
     conf = {
-        'snort' : 'snort',
-        'conf' : '/etc/snort/etc/snort.conf'
+        'snort': 'snort',
+        'conf': '/etc/snort/etc/snort.conf'
     }
-    
+
     snort = Snort(conf)
-    
+
     pcap = sys.argv[1]
     r = snort.run(pcap)
     print(r)
-
-    

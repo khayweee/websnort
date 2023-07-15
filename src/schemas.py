@@ -5,6 +5,7 @@ from pydantic import BaseModel
 
 SnortStr = str
 
+
 class RunPcap(BaseModel):
     status: str
     pcap: str
@@ -13,8 +14,9 @@ class RunPcap(BaseModel):
     profiles: List[dict]
     alerts: List[dict]
     version: str
-    error: Optional[str]
+    stderr: Optional[str]
     duration: float
+
 
 class RulePerforance(BaseModel):
     status: str

@@ -6,7 +6,7 @@ import tempfile
 
 from snort.snort import Snort
 from runner import Runner
-import schemas 
+import schemas
 import config
 
 from fastapi import FastAPI, Request, UploadFile, File, Form
@@ -14,14 +14,13 @@ from fastapi.responses import HTMLResponse
 import uvicorn
 
 DEFAULT_PCAP_NAME = 'icmp_8888.pcap'
-DEFAULT_PCAP_DIR =  os.path.join('/opt/websnort/resources', DEFAULT_PCAP_NAME)
-
+DEFAULT_PCAP_DIR = os.path.join('/opt/websnort/resources', DEFAULT_PCAP_NAME)
 
 
 def get_application():
     conf = {
-        'snort' : 'snort',
-        'conf' : '/etc/snort/etc/snort.conf',
+        'snort': 'snort',
+        'conf': '/etc/snort/etc/snort.conf',
         'extra_args': '-l /etc/snort/logs'
     }
 
@@ -32,12 +31,13 @@ def get_application():
                   version=config.VERSION)
     return app, snort, runner
 
+
 app, snort, runner = get_application()
 
 
-def run_pcap(infile = None,
+def run_pcap(infile=None,
              filename: str = None,
-             rules: List[schemas.SnortStr]=None) -> dict:
+             rules: List[schemas.SnortStr] = None) -> dict:
     """
     Helper function for running Snort
     """
@@ -49,11 +49,12 @@ def run_pcap(infile = None,
         filename = DEFAULT_PCAP_NAME
         infile = open(DEFAULT_PCAP_DIR, 'rb')
     results = {
-                'pcap': filename,
-                'status': 'Failed',
-              }
+        'pcap': filename,
+        'status': 'Failed',
+        'stderr': None
+    }
     try:
-        size=0
+        size = 0
         while True:
             buf = infile.read(1024)
             if not buf:
@@ -65,13 +66,16 @@ def run_pcap(infile = None,
         results['md5'] = m.hexdigest()
         results['filesize'] = size
         if not rules:
-            rules = ["alert icmp any any <> any any (msg: 'Pinging BOTH SIDE'; sid:1; )", "alert icmp any any -> 8.8.8.8 any (msg: 'Pinging to'; sid:2;)"]
-        results.update(runner._run_snort_alerts(snort, pcap=tmp.name, rules=rules))
+            rules = ["alert icmp any any <> any any (msg: 'Pinging BOTH SIDE'; sid:1; )",
+                     "alert icmp any any -> 8.8.8.8 any (msg: 'Pinging to'; sid:2;)"]
+        results.update(runner._run_snort_alerts(
+            snort, pcap=tmp.name, rules=rules))
     except OSError as ex:
         results['stderr'] = str(ex)
     finally:
         os.remove(tmp.name)
     return results
+
 
 @app.get("/health", name="websnort:health")
 async def health(request: Request):
@@ -87,13 +91,13 @@ async def health(request: Request):
 
 @app.post("/runpcap/", response_model=schemas.RunPcap)
 async def run_pcap_rules(file: UploadFile = File(None),
-                   rules: List[schemas.SnortStr] = Form(...)
-                  ):
+                         rules: List[schemas.SnortStr] = Form(...)
+                         ):
     """
     Endpoint for generating snort rule alerts and rule profiles
     :param file: The supplied pcap file
     :param rules: The supplied list of valid snort rules
-    """  
+    """
     result = {
         'rules': rules
     }
@@ -102,20 +106,21 @@ async def run_pcap_rules(file: UploadFile = File(None),
     if file:
         filename = file.filename
         infile = file.file
-    
+
     result.update(run_pcap(filename=filename, infile=infile, rules=rules))
-    
+    print(result)
     return result
+
 
 @app.post("/ruleperformance/", response_model=schemas.RulePerforance)
 async def run_rule_performance(file: UploadFile = File(None),
                                rules: List[schemas.SnortStr] = Form(...)
-                              ):
+                               ):
     """
     Endpoint for generating snort rule performance profiles
     :param file: The supplied pcap file
     :param rules: The supplied list of valid snort rules
-    """  
+    """
     result = {
         "rules": rules
     }
@@ -125,10 +130,11 @@ async def run_rule_performance(file: UploadFile = File(None),
     if file:
         filename = file.filename
         infile = file.file
-        
+
     result.update(run_pcap(filename=filename, infile=infile, rules=rules))
-    
+
     return result
+
 
 @app.get("/")
 async def main():
